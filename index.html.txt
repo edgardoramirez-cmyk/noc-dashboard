@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NOC Dashboard — Centro de Operaciones</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg-primary:#ffffff;--bg-secondary:#f5f5f4;--bg-tertiary:#eeede8;
+  --text-primary:#1a1a18;--text-secondary:#5a5a57;--text-tertiary:#9a9994;
+  --border-tertiary:rgba(0,0,0,0.12);--border-secondary:rgba(0,0,0,0.18);--border-primary:rgba(0,0,0,0.28);
+  --radius-md:8px;--radius-lg:12px;
+  --font-sans:'DM Sans',system-ui,sans-serif;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg-primary:#1e1e1c;--bg-secondary:#272724;--bg-tertiary:#2e2e2b;
+  --text-primary:#f0efe8;--text-secondary:#a8a89e;--text-tertiary:#6a6a62;
+  --border-tertiary:rgba(255,255,255,0.1);--border-secondary:rgba(255,255,255,0.16);--border-primary:rgba(255,255,255,0.26);
+}}
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&display=swap');
+body{font-family:var(--font-sans);background:var(--bg-tertiary);color:var(--text-primary);min-height:100vh}
+.shell{max-width:900px;margin:0 auto;padding:24px 16px 48px}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+.topbar-title{font-size:16px;font-weight:500;color:var(--text-primary)}
+.topbar-sub{font-size:12px;color:var(--text-secondary);margin-top:2px}
+.nav{display:flex;gap:3px;background:var(--bg-secondary);padding:3px;border-radius:var(--radius-md);border:0.5px solid var(--border-tertiary)}
+.nav-btn{font-size:12px;padding:5px 14px;border-radius:6px;border:none;background:none;color:var(--text-secondary);cursor:pointer;font-family:var(--font-sans);transition:all .15s}
+.nav-btn.active{background:var(--bg-primary);color:var(--text-primary);font-weight:500;border:0.5px solid var(--border-secondary)}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:16px}
+.kpi{background:var(--bg-secondary);border-radius:var(--radius-md);padding:12px 14px}
+.kpi-label{font-size:11px;color:var(--text-secondary);margin-bottom:4px}
+.kpi-val{font-size:22px;font-weight:500;color:var(--text-primary);line-height:1}
+.kpi-sub{font-size:11px;color:var(--text-tertiary);margin-top:3px}
+.section-label{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text-tertiary);margin:18px 0 8px 2px}
+.tier{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.area-block{flex:1;min-width:180px;border-radius:var(--radius-lg);padding:12px 10px 10px;border:0.5px solid}
+.area-block.mon{background:#E1F5EE;border-color:#0F6E56}
+.area-block.tec{background:#FAECE7;border-color:#993C1D}
+.area-block.jef,.area-block.coord{background:#EEEDFE;border-color:#534AB7}
+.area-title{font-size:12px;font-weight:500;margin-bottom:2px}
+.area-sub{font-size:11px;margin-bottom:10px}
+.area-block.mon .area-title{color:#085041}.area-block.mon .area-sub{color:#0F6E56}
+.area-block.tec .area-title{color:#712B13}.area-block.tec .area-sub{color:#993C1D}
+.area-block.jef .area-title,.area-block.coord .area-title{color:#3C3489}
+.area-block.jef .area-sub,.area-block.coord .area-sub{color:#534AB7}
+.person-card{display:flex;align-items:center;gap:8px;background:var(--bg-primary);border-radius:var(--radius-md);padding:7px 9px;margin-bottom:6px;border:0.5px solid var(--border-secondary);cursor:pointer;transition:border-color .15s}
+.person-card:hover{border-color:var(--border-primary)}
+.person-card:last-child{margin-bottom:0}
+.avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;font-weight:500}
+.mon .avatar{background:#9FE1CB;color:#085041}
+.tec .avatar{background:#F5C4B3;color:#712B13}
+.jef .avatar,.coord .avatar{background:#CECBF6;color:#3C3489}
+.card-info{flex:1;min-width:0}
+.card-name{font-size:11px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-style:italic}
+.card-role{font-size:12px;font-weight:500;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500;white-space:nowrap;flex-shrink:0}
+.badge.asignado{background:#E1F5EE;color:#085041}
+.badge.vacio{background:#FCEBEB;color:#A32D2D}
+.overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.4);align-items:flex-start;justify-content:center;padding-top:40px;z-index:100;overflow-y:auto}
+.overlay.open{display:flex}
+.panel{background:var(--bg-primary);border-radius:var(--radius-lg);padding:20px;width:320px;border:0.5px solid var(--border-secondary);max-height:85vh;overflow-y:auto;margin-bottom:40px}
+.panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.panel-title{font-size:14px;font-weight:500;color:var(--text-primary)}
+.close-btn{background:none;border:none;cursor:pointer;color:var(--text-secondary);font-size:20px;line-height:1;padding:2px}
+.profile-hero{display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg-secondary);border-radius:var(--radius-md);margin-bottom:14px}
+.profile-av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:500;flex-shrink:0}
+.profile-name{font-size:14px;font-weight:500;color:var(--text-primary)}
+.profile-role{font-size:12px;color:var(--text-secondary);margin-top:2px}
+.info-row{display:flex;justify-content:space-between;align-items:flex-start;padding:7px 0;border-bottom:0.5px solid var(--border-tertiary);font-size:12px;gap:8px}
+.info-row:last-child{border-bottom:none}
+.info-key{color:var(--text-secondary);flex-shrink:0}
+.info-val{color:var(--text-primary);font-weight:500;text-align:right}
+.field-label{font-size:11px;color:var(--text-secondary);margin-bottom:4px;margin-top:10px}
+.field-input,.field-select{width:100%;border:0.5px solid var(--border-secondary);border-radius:var(--radius-md);padding:7px 10px;font-size:13px;color:var(--text-primary);background:var(--bg-secondary);font-family:var(--font-sans)}
+.field-input:focus,.field-select:focus{outline:none;border-color:var(--border-primary)}
+.btn-row{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.btn{padding:6px 14px;border-radius:var(--radius-md);font-size:12px;cursor:pointer;border:0.5px solid var(--border-secondary);background:var(--bg-secondary);color:var(--text-primary);font-family:var(--font-sans)}
+.btn.primary{background:#534AB7;color:#EEEDFE;border-color:#534AB7}
+.btn.primary:hover{background:#3C3489}
+.btn.danger{background:#FCEBEB;color:#A32D2D;border-color:#F7C1C1}
+.view-page{display:none}.view-page.active{display:block}
+.empty-state{text-align:center;padding:40px 16px;color:var(--text-tertiary);font-size:13px}
+.zone-card{background:var(--bg-primary);border:0.5px solid var(--border-secondary);border-radius:var(--radius-lg);padding:14px 16px;flex:1;min-width:160px}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">NOC — Centro de Operaciones</div>
+      <div class="topbar-sub">5,000 escuelas · 3 zonas · El Salvador</div>
+    </div>
+    <div class="nav">
+      <button class="nav-btn active" onclick="showView('overview')">Resumen</button>
+      <button class="nav-btn" onclick="showView('org')">Organigrama</button>
+      <button class="nav-btn" onclick="showView('team')">Equipo</button>
+    </div>
+  </div>
+  <div id="v-overview" class="view-page active"></div>
+  <div id="v-org" class="view-page"></div>
+  <div id="v-team" class="view-page"></div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="panel" id="panel-content"></div>
+</div>
+
+<script>
+const ZONES=['Occidente','Centro','Oriente'];
+const ZONE_SCHOOLS={Occidente:1250,Centro:2500,Oriente:1250};
+const people={
+  j1:{id:'j1',role:'Jefe NOC',name:'Joatan Acosta',area:'jef',zone:'—',email:'',phone:'',notes:''},
+  j2:{id:'j2',role:'Jefe NOC',name:'Gracia Rivas',area:'jef',zone:'—',email:'',phone:'',notes:''},
+  cmo1:{id:'cmo1',role:'Supervisor Monitoreo',name:'Angela Rodriguez',area:'coord',zone:'Occidente',email:'',phone:'',notes:''},
+  cmo2:{id:'cmo2',role:'Supervisor Técnico',name:'Jose Benigno',area:'coord',zone:'Occidente',email:'',phone:'',notes:''},
+  cmc1:{id:'cmc1',role:'Supervisor Monitoreo',name:'Andrea Arevalo',area:'coord',zone:'Centro',email:'',phone:'',notes:''},
+  cmc2:{id:'cmc2',role:'Supervisor Técnico',name:'Edgardo Ramirez',area:'coord',zone:'Centro',email:'',phone:'',notes:''},
+  cmr1:{id:'cmr1',role:'Supervisor Monitoreo',name:'Marta de la Cruz',area:'coord',zone:'Oriente',email:'',phone:'',notes:''},
+  cmr2:{id:'cmr2',role:'Supervisor Técnico',name:'Hector Garcia',area:'coord',zone:'Oriente',email:'',phone:'',notes:''},
+  cto1:{id:'cto1',role:'Coordinador Técnico',name:'Mariela Rivas',area:'coord',zone:'Occidente',email:'',phone:'',notes:''},
+  ctc1:{id:'ctc1',role:'Coordinador Técnico',name:'Flor Cosme',area:'coord',zone:'Centro',email:'',phone:'',notes:''},
+  ctr1:{id:'ctr1',role:'Coordinador Técnico',name:'Jason Gustabo',area:'coord',zone:'Oriente',email:'',phone:'',notes:''},
+  mo1:{id:'mo1',role:'Monitor',name:'',area:'mon',zone:'Occidente',email:'',phone:'',notes:''},
+  mo2:{id:'mo2',role:'Monitor',name:'',area:'mon',zone:'Occidente',email:'',phone:'',notes:''},
+  mo3:{id:'mo3',role:'Monitor',name:'',area:'mon',zone:'Occidente',email:'',phone:'',notes:''},
+  mo4:{id:'mo4',role:'Monitor',name:'',area:'mon',zone:'Occidente',email:'',phone:'',notes:''},
+  mc1:{id:'mc1',role:'Monitor',name:'',area:'mon',zone:'Centro',email:'',phone:'',notes:''},
+  mc2:{id:'mc2',role:'Monitor',name:'',area:'mon',zone:'Centro',email:'',phone:'',notes:''},
+  mc3:{id:'mc3',role:'Monitor',name:'',area:'mon',zone:'Centro',email:'',phone:'',notes:''},
+  mc4:{id:'mc4',role:'Monitor',name:'',area:'mon',zone:'Centro',email:'',phone:'',notes:''},
+  mc5:{id:'mc5',role:'Monitor',name:'',area:'mon',zone:'Centro',email:'',phone:'',notes:''},
+  mc6:{id:'mc6',role:'Monitor',name:'',area:'mon',zone:'Centro',email:'',phone:'',notes:''},
+  mc7:{id:'mc7',role:'Monitor',name:'',area:'mon',zone:'Centro',email:'',phone:'',notes:''},
+  mc8:{id:'mc8',role:'Monitor',name:'',area:'mon',zone:'Centro',email:'',phone:'',notes:''},
+  mr1:{id:'mr1',role:'Monitor',name:'',area:'mon',zone:'Oriente',email:'',phone:'',notes:''},
+  mr2:{id:'mr2',role:'Monitor',name:'',area:'mon',zone:'Oriente',email:'',phone:'',notes:''},
+  mr3:{id:'mr3',role:'Monitor',name:'',area:'mon',zone:'Oriente',email:'',phone:'',notes:''},
+  mr4:{id:'mr4',role:'Monitor',name:'',area:'mon',zone:'Oriente',email:'',phone:'',notes:''},
+  mr5:{id:'mr5',role:'Monitor',name:'',area:'mon',zone:'Oriente',email:'',phone:'',notes:''},
+  to1:{id:'to1',role:'Técnico N2',name:'Luis Melendez',area:'tec',zone:'Occidente',email:'',phone:'',notes:''},
+  to2:{id:'to2',role:'Técnico N2',name:'',area:'tec',zone:'Occidente',email:'',phone:'',notes:''},
+  to3:{id:'to3',role:'Técnico N1',name:'Kevin Cruz',area:'tec',zone:'Occidente',email:'',phone:'',notes:''},
+  to4:{id:'to4',role:'Técnico N1',name:'',area:'tec',zone:'Occidente',email:'',phone:'',notes:''},
+  tc1:{id:'tc1',role:'Técnico N2',name:'Esau',area:'tec',zone:'Centro',email:'',phone:'',notes:''},
+  tc2:{id:'tc2',role:'Técnico N2',name:'Rodrigo',area:'tec',zone:'Centro',email:'',phone:'',notes:''},
+  tc3:{id:'tc3',role:'Técnico N1',name:'Luis Arturo',area:'tec',zone:'Centro',email:'',phone:'',notes:''},
+  tc4:{id:'tc4',role:'Técnico N1',name:'Victor Manuel',area:'tec',zone:'Centro',email:'',phone:'',notes:''},
+  tr1:{id:'tr1',role:'Técnico N2',name:'Manuel',area:'tec',zone:'Oriente',email:'',phone:'',notes:''},
+  tr2:{id:'tr2',role:'Técnico N2',name:'',area:'tec',zone:'Oriente',email:'',phone:'',notes:''},
+  tr3:{id:'tr3',role:'Técnico N1',name:'',area:'tec',zone:'Oriente',email:'',phone:'',notes:''},
+};
+
+function ini(name,role){const s=name||role;return s.trim().split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();}
+function statusBadge(id){
+  const p=people[id];
+  if(!p.name.trim()||p.name==='Sin Asignar') return '<span class="badge vacio">vacante</span>';
+  return '<span class="badge asignado">asignado</span>';
+}
+function calcStats(){
+  const ids=Object.keys(people);
+  const total=ids.length;
+  const assigned=ids.filter(id=>people[id].name.trim()&&people[id].name!=='Sin Asignar').length;
+  const vacant=total-assigned;
+  const monIds=ids.filter(id=>people[id].area==='mon');
+  const monFilled=monIds.filter(id=>people[id].name.trim()).length;
+  return{total,assigned,vacant,monTotal:monIds.length,monFilled};
+}
+function renderKPIs(){
+  const s=calcStats();
+  const pct=Math.round(s.assigned/s.total*100);
+  return`<div class="kpi-grid">
+    <div class="kpi"><div class="kpi-label">Total puestos</div><div class="kpi-val">${s.total}</div><div class="kpi-sub">en 3 zonas</div></div>
+    <div class="kpi"><div class="kpi-label">Asignados</div><div class="kpi-val">${s.assigned}</div><div class="kpi-sub">${pct}% del total</div></div>
+    <div class="kpi"><div class="kpi-label">Vacantes</div><div class="kpi-val" style="color:#E24B4A">${s.vacant}</div><div class="kpi-sub">por cubrir</div></div>
+    <div class="kpi"><div class="kpi-label">Monitores</div><div class="kpi-val">${s.monFilled}/${s.monTotal}</div><div class="kpi-sub">asignados</div></div>
+    <div class="kpi"><div class="kpi-label">Escuelas</div><div class="kpi-val">5,000</div><div class="kpi-sub">bajo monitoreo</div></div>
+  </div>`;
+}
+function renderZoneCard(zone){
+  const ids=Object.keys(people).filter(id=>people[id].zone===zone);
+  const total=ids.length;
+  const assigned=ids.filter(id=>people[id].name.trim()&&people[id].name!=='Sin Asignar').length;
+  const vacant=total-assigned;
+  const pct=Math.round(assigned/total*100);
+  const barColor=pct===100?'#1D9E75':pct>=60?'#EF9F27':'#E24B4A';
+  return`<div class="zone-card">
+    <div style="font-size:13px;font-weight:500;color:var(--text-primary);margin-bottom:2px">${zone}</div>
+    <div style="font-size:11px;color:var(--text-secondary);margin-bottom:10px">${ZONE_SCHOOLS[zone].toLocaleString()} escuelas</div>
+    <div style="display:flex;gap:14px;margin-bottom:10px">
+      <div><div style="font-size:10px;color:var(--text-tertiary)">Asignados</div><div style="font-size:18px;font-weight:500">${assigned}</div></div>
+      <div><div style="font-size:10px;color:var(--text-tertiary)">Vacantes</div><div style="font-size:18px;font-weight:500;color:#E24B4A">${vacant}</div></div>
+      <div><div style="font-size:10px;color:var(--text-tertiary)">Cobertura</div><div style="font-size:18px;font-weight:500">${pct}%</div></div>
+    </div>
+    <div style="height:4px;background:var(--bg-secondary);border-radius:2px;overflow:hidden">
+      <div style="height:100%;width:${pct}%;background:${barColor};border-radius:2px"></div>
+    </div>
+  </div>`;
+}
+function renderVacantList(){
+  const vacant=Object.values(people).filter(p=>!p.name.trim()||p.name==='Sin Asignar');
+  if(!vacant.length) return'<div class="empty-state">✓ Todos los puestos cubiertos</div>';
+  return vacant.map(p=>`<div class="person-card" onclick="openProfile('${p.id}')">
+    <div class="avatar" style="background:var(--bg-secondary);color:var(--text-secondary)">?</div>
+    <div class="card-info"><div class="card-role">${p.role}</div><div class="card-name">${p.zone} · vacante</div></div>
+    <span class="badge vacio">vacante</span>
+  </div>`).join('');
+}
+function renderOverview(){
+  return renderKPIs()+`
+  <div class="section-label">cobertura por zona</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">${ZONES.map(renderZoneCard).join('')}</div>
+  <div class="section-label">puestos vacantes</div>
+  ${renderVacantList()}`;
+}
+const orgStructure=[
+  {label:'Jefatura',areas:[{cls:'jef',title:'Jefatura NOC',sub:'Supervisión general · 5,000 escuelas',slots:['j1','j2']}]},
+  {label:'Coordinación por zona',areas:[
+    {cls:'coord',title:'Coord. Occidente',sub:'',slots:['cmo1','cmo2','cto1']},
+    {cls:'coord',title:'Coord. Centro',sub:'',slots:['cmc1','cmc2','ctc1']},
+    {cls:'coord',title:'Coord. Oriente',sub:'',slots:['cmr1','cmr2','ctr1']}
+  ]},
+  {label:'Monitoreo por zona',areas:[
+    {cls:'mon',title:'Monitoreo Occidente',sub:'≈1,250 escuelas',slots:['mo1','mo2','mo3','mo4']},
+    {cls:'mon',title:'Monitoreo Centro',sub:'≈2,500 escuelas',slots:['mc1','mc2','mc3','mc4','mc5','mc6','mc7','mc8']},
+    {cls:'mon',title:'Monitoreo Oriente',sub:'≈1,250 escuelas',slots:['mr1','mr2','mr3','mr4','mr5']}
+  ]},
+  {label:'Área técnica por zona',areas:[
+    {cls:'tec',title:'Técnicos Occidente',sub:'≈1,250 escuelas',slots:['to1','to2','to3','to4']},
+    {cls:'tec',title:'Técnicos Centro',sub:'≈2,500 escuelas',slots:['tc1','tc2','tc3','tc4']},
+    {cls:'tec',title:'Técnicos Oriente',sub:'≈1,250 escuelas',slots:['tr1','tr2','tr3']}
+  ]}
+];
+function renderCard(id){
+  const p=people[id];
+  return`<div class="person-card" onclick="openProfile('${id}')">
+    <div class="avatar">${ini(p.name,p.role)}</div>
+    <div class="card-info">
+      <div class="card-role">${p.role}</div>
+      ${p.name&&p.name!=='Sin Asignar'?`<div class="card-name">${p.name}</div>`:`<div class="card-name" style="color:#E24B4A;font-style:normal">— vacante</div>`}
+    </div>
+    ${statusBadge(id)}
+  </div>`;
+}
+function renderOrg(){
+  return orgStructure.map(s=>`<div class="section-label">${s.label}</div><div class="tier">${s.areas.map(a=>`<div class="area-block ${a.cls}"><div class="area-title">${a.title}</div><div class="area-sub">${a.sub}</div>${a.slots.map(id=>renderCard(id)).join('')}</div>`).join('')}</div>`).join('');
+}
+let teamFilter='all',teamSearch='';
+function renderTeam(){
+  const filtered=Object.values(people).filter(p=>{
+    if(teamFilter==='vacant') return!p.name.trim()||p.name==='Sin Asignar';
+    if(teamFilter==='mon') return p.area==='mon';
+    if(teamFilter==='tec') return p.area==='tec';
+    if(teamFilter==='coord') return p.area==='coord'||p.area==='jef';
+    return true;
+  }).filter(p=>{
+    if(!teamSearch) return true;
+    const q=teamSearch.toLowerCase();
+    return p.name.toLowerCase().includes(q)||p.role.toLowerCase().includes(q)||p.zone.toLowerCase().includes(q);
+  });
+  const pills=[{k:'all',l:'Todos'},{k:'coord',l:'Coordinación'},{k:'mon',l:'Monitoreo'},{k:'tec',l:'Técnico'},{k:'vacant',l:'Vacantes'}];
+  return`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+    <input class="field-input" style="flex:1;min-width:160px;max-width:220px" placeholder="Buscar nombre, cargo, zona..." oninput="teamSearch=this.value;renderView('team')" value="${teamSearch}">
+    <div style="display:flex;gap:4px;flex-wrap:wrap">${pills.map(p=>`<button onclick="teamFilter='${p.k}';renderView('team')" style="font-size:11px;padding:4px 10px;border-radius:10px;border:0.5px solid;cursor:pointer;font-family:var(--font-sans);${teamFilter===p.k?'background:#534AB7;color:#EEEDFE;border-color:#534AB7':'background:var(--bg-secondary);color:var(--text-secondary);border-color:var(--border-secondary)'}">${p.l}</button>`).join('')}</div>
+  </div>
+  ${filtered.length===0?'<div class="empty-state">Sin resultados</div>':`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px">${filtered.map(p=>`<div class="person-card" onclick="openProfile('${p.id}')"><div class="avatar ${p.area}">${ini(p.name,p.role)}</div><div class="card-info"><div class="card-role">${p.role}</div>${p.name&&p.name!=='Sin Asignar'?`<div class="card-name">${p.name} · ${p.zone}</div>`:`<div class="card-name" style="color:#E24B4A;font-style:normal">${p.zone} · vacante</div>`}</div>${statusBadge(p.id)}</div>`).join('')}</div>`}`;
+}
+let currentView='overview';
+function showView(v){
+  currentView=v;
+  document.querySelectorAll('.nav-btn').forEach((b,i)=>{
+    const map={0:'overview',1:'org',2:'team'};
+    b.classList.toggle('active',map[i]===v);
+  });
+  renderView(v);
+}
+function renderView(v){
+  document.querySelectorAll('.view-page').forEach(el=>el.classList.remove('active'));
+  const el=document.getElementById('v-'+v);
+  if(el){el.classList.add('active');el.innerHTML=v==='overview'?renderOverview():v==='org'?renderOrg():renderTeam();}
+}
+function openProfile(id){
+  const p=people[id];
+  const av=ini(p.name,p.role);
+  const avcol=p.area==='mon'?'background:#9FE1CB;color:#085041':p.area==='tec'?'background:#F5C4B3;color:#712B13':'background:#CECBF6;color:#3C3489';
+  const roleOpts=['Monitor','Técnico N1','Técnico N2','Supervisor Monitoreo','Supervisor Técnico','Coordinador Técnico','Jefe NOC'].map(r=>`<option${p.role===r?' selected':''}>${r}</option>`).join('');
+  const zoneOpts=['—','Occidente','Centro','Oriente'].map(z=>`<option${p.zone===z?' selected':''}>${z}</option>`).join('');
+  document.getElementById('panel-content').innerHTML=`
+    <div class="panel-header">
+      <span class="panel-title">Perfil de puesto</span>
+      <button class="close-btn" onclick="closeOverlay()">×</button>
+    </div>
+    <div class="profile-hero">
+      <div class="profile-av" style="${avcol}">${av}</div>
+      <div><div class="profile-name">${p.name||'— Sin asignar'}</div><div class="profile-role">${p.role} · ${p.zone}</div></div>
+    </div>
+    <div>${[['Área',p.area==='mon'?'Monitoreo':p.area==='tec'?'Técnica':p.area==='jef'?'Jefatura':'Coordinación'],['Zona',p.zone],['Estado',p.name&&p.name!=='Sin Asignar'?'Asignado':'Vacante'],['Email',p.email||'—'],['Teléfono',p.phone||'—'],['Notas',p.notes||'—']].map(([k,v])=>`<div class="info-row"><span class="info-key">${k}</span><span class="info-val">${v}</span></div>`).join('')}</div>
+    <div style="height:1px;background:var(--border-tertiary);margin:12px 0 4px"></div>
+    <div style="font-size:11px;color:var(--text-secondary);margin-bottom:8px;font-weight:500">EDITAR PUESTO</div>
+    <div class="field-label">Nombre</div><input class="field-input" id="ed-name" value="${p.name}" placeholder="Nombre completo">
+    <div class="field-label">Cargo</div><select class="field-select" id="ed-role">${roleOpts}</select>
+    <div class="field-label">Zona</div><select class="field-select" id="ed-zone">${zoneOpts}</select>
+    <div class="field-label">Email</div><input class="field-input" id="ed-email" value="${p.email}" placeholder="correo@ejemplo.com">
+    <div class="field-label">Teléfono</div><input class="field-input" id="ed-phone" value="${p.phone}" placeholder="+503 0000-0000">
+    <div class="field-label">Notas</div><input class="field-input" id="ed-notes" value="${p.notes}" placeholder="Observaciones...">
+    <div class="btn-row">
+      <button class="btn danger" onclick="clearPerson('${id}')">Vaciar</button>
+      <button class="btn" onclick="closeOverlay()">Cancelar</button>
+      <button class="btn primary" onclick="savePerson('${id}')">Guardar</button>
+    </div>`;
+  document.getElementById('overlay').classList.add('open');
+}
+function clearPerson(id){people[id].name='';people[id].email='';people[id].phone='';people[id].notes='';closeOverlay();renderView(currentView);}
+function savePerson(id){
+  people[id].name=document.getElementById('ed-name').value.trim();
+  people[id].role=document.getElementById('ed-role').value;
+  people[id].zone=document.getElementById('ed-zone').value;
+  people[id].email=document.getElementById('ed-email').value.trim();
+  people[id].phone=document.getElementById('ed-phone').value.trim();
+  people[id].notes=document.getElementById('ed-notes').value.trim();
+  closeOverlay();renderView(currentView);
+}
+function closeOverlay(){document.getElementById('overlay').classList.remove('open');}
+document.getElementById('overlay').addEventListener('click',function(e){if(e.target===this)closeOverlay();});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeOverlay();});
+renderView('overview');
+</script>
+</body>
+</html>
