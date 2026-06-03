@@ -1,330 +1,508 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NOC Dashboard — Centro de Operaciones</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg-primary:#ffffff;--bg-secondary:#f5f5f4;--bg-tertiary:#eeede8;
-  --text-primary:#1a1a18;--text-secondary:#5a5a57;--text-tertiary:#9a9994;
-  --border-tertiary:rgba(0,0,0,0.12);--border-secondary:rgba(0,0,0,0.18);--border-primary:rgba(0,0,0,0.28);
-  --radius-md:8px;--radius-lg:12px;
-  --font-sans:'DM Sans',system-ui,sans-serif;
-}
-@media(prefers-color-scheme:dark){:root{
-  --bg-primary:#1e1e1c;--bg-secondary:#272724;--bg-tertiary:#2e2e2b;
-  --text-primary:#f0efe8;--text-secondary:#a8a89e;--text-tertiary:#6a6a62;
-  --border-tertiary:rgba(255,255,255,0.1);--border-secondary:rgba(255,255,255,0.16);--border-primary:rgba(255,255,255,0.26);
-}}
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&display=swap');
-body{font-family:var(--font-sans);background:var(--bg-tertiary);color:var(--text-primary);min-height:100vh}
-.shell{max-width:900px;margin:0 auto;padding:24px 16px 48px}
-.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
-.topbar-title{font-size:16px;font-weight:500;color:var(--text-primary)}
-.topbar-sub{font-size:12px;color:var(--text-secondary);margin-top:2px}
-.nav{display:flex;gap:3px;background:var(--bg-secondary);padding:3px;border-radius:var(--radius-md);border:0.5px solid var(--border-tertiary)}
-.nav-btn{font-size:12px;padding:5px 14px;border-radius:6px;border:none;background:none;color:var(--text-secondary);cursor:pointer;font-family:var(--font-sans);transition:all .15s}
-.nav-btn.active{background:var(--bg-primary);color:var(--text-primary);font-weight:500;border:0.5px solid var(--border-secondary)}
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:16px}
-.kpi{background:var(--bg-secondary);border-radius:var(--radius-md);padding:12px 14px}
-.kpi-label{font-size:11px;color:var(--text-secondary);margin-bottom:4px}
-.kpi-val{font-size:22px;font-weight:500;color:var(--text-primary);line-height:1}
-.kpi-sub{font-size:11px;color:var(--text-tertiary);margin-top:3px}
-.section-label{font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text-tertiary);margin:18px 0 8px 2px}
-.tier{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px}
-.area-block{flex:1;min-width:180px;border-radius:var(--radius-lg);padding:12px 10px 10px;border:0.5px solid}
-.area-block.mon{background:#E1F5EE;border-color:#0F6E56}
-.area-block.tec{background:#FAECE7;border-color:#993C1D}
-.area-block.jef,.area-block.coord{background:#EEEDFE;border-color:#534AB7}
-.area-title{font-size:12px;font-weight:500;margin-bottom:2px}
-.area-sub{font-size:11px;margin-bottom:10px}
-.area-block.mon .area-title{color:#085041}.area-block.mon .area-sub{color:#0F6E56}
-.area-block.tec .area-title{color:#712B13}.area-block.tec .area-sub{color:#993C1D}
-.area-block.jef .area-title,.area-block.coord .area-title{color:#3C3489}
-.area-block.jef .area-sub,.area-block.coord .area-sub{color:#534AB7}
-.person-card{display:flex;align-items:center;gap:8px;background:var(--bg-primary);border-radius:var(--radius-md);padding:7px 9px;margin-bottom:6px;border:0.5px solid var(--border-secondary);cursor:pointer;transition:border-color .15s}
-.person-card:hover{border-color:var(--border-primary)}
-.person-card:last-child{margin-bottom:0}
-.avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;font-weight:500}
-.mon .avatar{background:#9FE1CB;color:#085041}
-.tec .avatar{background:#F5C4B3;color:#712B13}
-.jef .avatar,.coord .avatar{background:#CECBF6;color:#3C3489}
-.card-info{flex:1;min-width:0}
-.card-name{font-size:11px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-style:italic}
-.card-role{font-size:12px;font-weight:500;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.badge{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500;white-space:nowrap;flex-shrink:0}
-.badge.asignado{background:#E1F5EE;color:#085041}
-.badge.vacio{background:#FCEBEB;color:#A32D2D}
-.overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.4);align-items:flex-start;justify-content:center;padding-top:40px;z-index:100;overflow-y:auto}
-.overlay.open{display:flex}
-.panel{background:var(--bg-primary);border-radius:var(--radius-lg);padding:20px;width:320px;border:0.5px solid var(--border-secondary);max-height:85vh;overflow-y:auto;margin-bottom:40px}
-.panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-.panel-title{font-size:14px;font-weight:500;color:var(--text-primary)}
-.close-btn{background:none;border:none;cursor:pointer;color:var(--text-secondary);font-size:20px;line-height:1;padding:2px}
-.profile-hero{display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg-secondary);border-radius:var(--radius-md);margin-bottom:14px}
-.profile-av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:500;flex-shrink:0}
-.profile-name{font-size:14px;font-weight:500;color:var(--text-primary)}
-.profile-role{font-size:12px;color:var(--text-secondary);margin-top:2px}
-.info-row{display:flex;justify-content:space-between;align-items:flex-start;padding:7px 0;border-bottom:0.5px solid var(--border-tertiary);font-size:12px;gap:8px}
-.info-row:last-child{border-bottom:none}
-.info-key{color:var(--text-secondary);flex-shrink:0}
-.info-val{color:var(--text-primary);font-weight:500;text-align:right}
-.field-label{font-size:11px;color:var(--text-secondary);margin-bottom:4px;margin-top:10px}
-.field-input,.field-select{width:100%;border:0.5px solid var(--border-secondary);border-radius:var(--radius-md);padding:7px 10px;font-size:13px;color:var(--text-primary);background:var(--bg-secondary);font-family:var(--font-sans)}
-.field-input:focus,.field-select:focus{outline:none;border-color:var(--border-primary)}
-.btn-row{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
-.btn{padding:6px 14px;border-radius:var(--radius-md);font-size:12px;cursor:pointer;border:0.5px solid var(--border-secondary);background:var(--bg-secondary);color:var(--text-primary);font-family:var(--font-sans)}
-.btn.primary{background:#534AB7;color:#EEEDFE;border-color:#534AB7}
-.btn.primary:hover{background:#3C3489}
-.btn.danger{background:#FCEBEB;color:#A32D2D;border-color:#F7C1C1}
-.view-page{display:none}.view-page.active{display:block}
-.empty-state{text-align:center;padding:40px 16px;color:var(--text-tertiary);font-size:13px}
-.zone-card{background:var(--bg-primary);border:0.5px solid var(--border-secondary);border-radius:var(--radius-lg);padding:14px 16px;flex:1;min-width:160px}
-</style>
-</head>
-<body>
-<div class="shell">
-  <div class="topbar">
-    <div>
-      <div class="topbar-title">NOC — Centro de Operaciones</div>
-      <div class="topbar-sub">5,000 escuelas · 3 zonas · El Salvador</div>
-    </div>
-    <div class="nav">
-      <button class="nav-btn active" onclick="showView('overview')">Resumen</button>
-      <button class="nav-btn" onclick="showView('org')">Organigrama</button>
-      <button class="nav-btn" onclick="showView('team')">Equipo</button>
-    </div>
-  </div>
-  <div id="v-overview" class="view-page active"></div>
-  <div id="v-org" class="view-page"></div>
-  <div id="v-team" class="view-page"></div>
-</div>
+import { useState, useEffect, useRef } from 'react';
+import * as Location from 'expo-location';
+import * as ImagePicker from 'expo-image-picker';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system';
+import { Image } from 'react-native';
+import { db, auth } from '../firebase';
+import { collection, doc, setDoc, query, where, limit, getDocs } from 'firebase/firestore';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator, Platform } from 'react-native';
 
-<div class="overlay" id="overlay">
-  <div class="panel" id="panel-content"></div>
-</div>
-
-<script>
-const ZONES=['Occidente','Centro','Oriente'];
-const ZONE_SCHOOLS={Occidente:1250,Centro:2500,Oriente:1250};
-const people={
-  j1:{id:'j1',role:'Jefe NOC',name:'Joatan Acosta',area:'jef',zone:'—',email:'',phone:'',notes:''},
-  j2:{id:'j2',role:'Jefe NOC',name:'Gracia Rivas',area:'jef',zone:'—',email:'',phone:'',notes:''},
-  cmo1:{id:'cmo1',role:'Supervisor Monitoreo',name:'Angela Rodriguez',area:'coord',zone:'Occidente',email:'',phone:'',notes:''},
-  cmo2:{id:'cmo2',role:'Supervisor Técnico',name:'Jose Benigno',area:'coord',zone:'Occidente',email:'',phone:'',notes:''},
-  cmc1:{id:'cmc1',role:'Supervisor Monitoreo',name:'Andrea Arevalo',area:'coord',zone:'Centro',email:'',phone:'',notes:''},
-  cmc2:{id:'cmc2',role:'Supervisor Técnico',name:'Edgardo Ramirez',area:'coord',zone:'Centro',email:'',phone:'',notes:''},
-  cmr1:{id:'cmr1',role:'Supervisor Monitoreo',name:'Marta de la Cruz',area:'coord',zone:'Oriente',email:'',phone:'',notes:''},
-  cmr2:{id:'cmr2',role:'Supervisor Técnico',name:'Hector Garcia',area:'coord',zone:'Oriente',email:'',phone:'',notes:''},
-  cto1:{id:'cto1',role:'Coordinador Técnico',name:'Mariela Rivas',area:'coord',zone:'Occidente',email:'',phone:'',notes:''},
-  ctc1:{id:'ctc1',role:'Coordinador Técnico',name:'Flor Cosme',area:'coord',zone:'Centro',email:'',phone:'',notes:''},
-  ctr1:{id:'ctr1',role:'Coordinador Técnico',name:'Jason Gustabo',area:'coord',zone:'Oriente',email:'',phone:'',notes:''},
-  mo1:{id:'mo1',role:'Monitor',name:'',area:'mon',zone:'Occidente',email:'',phone:'',notes:''},
-  mo2:{id:'mo2',role:'Monitor',name:'',area:'mon',zone:'Occidente',email:'',phone:'',notes:''},
-  mo3:{id:'mo3',role:'Monitor',name:'',area:'mon',zone:'Occidente',email:'',phone:'',notes:''},
-  mo4:{id:'mo4',role:'Monitor',name:'',area:'mon',zone:'Occidente',email:'',phone:'',notes:''},
-  mc1:{id:'mc1',role:'Monitor',name:'',area:'mon',zone:'Centro',email:'',phone:'',notes:''},
-  mc2:{id:'mc2',role:'Monitor',name:'',area:'mon',zone:'Centro',email:'',phone:'',notes:''},
-  mc3:{id:'mc3',role:'Monitor',name:'',area:'mon',zone:'Centro',email:'',phone:'',notes:''},
-  mc4:{id:'mc4',role:'Monitor',name:'',area:'mon',zone:'Centro',email:'',phone:'',notes:''},
-  mc5:{id:'mc5',role:'Monitor',name:'',area:'mon',zone:'Centro',email:'',phone:'',notes:''},
-  mc6:{id:'mc6',role:'Monitor',name:'',area:'mon',zone:'Centro',email:'',phone:'',notes:''},
-  mc7:{id:'mc7',role:'Monitor',name:'',area:'mon',zone:'Centro',email:'',phone:'',notes:''},
-  mc8:{id:'mc8',role:'Monitor',name:'',area:'mon',zone:'Centro',email:'',phone:'',notes:''},
-  mr1:{id:'mr1',role:'Monitor',name:'',area:'mon',zone:'Oriente',email:'',phone:'',notes:''},
-  mr2:{id:'mr2',role:'Monitor',name:'',area:'mon',zone:'Oriente',email:'',phone:'',notes:''},
-  mr3:{id:'mr3',role:'Monitor',name:'',area:'mon',zone:'Oriente',email:'',phone:'',notes:''},
-  mr4:{id:'mr4',role:'Monitor',name:'',area:'mon',zone:'Oriente',email:'',phone:'',notes:''},
-  mr5:{id:'mr5',role:'Monitor',name:'',area:'mon',zone:'Oriente',email:'',phone:'',notes:''},
-  to1:{id:'to1',role:'Técnico N2',name:'Luis Melendez',area:'tec',zone:'Occidente',email:'',phone:'',notes:''},
-  to2:{id:'to2',role:'Técnico N2',name:'',area:'tec',zone:'Occidente',email:'',phone:'',notes:''},
-  to3:{id:'to3',role:'Técnico N1',name:'Kevin Cruz',area:'tec',zone:'Occidente',email:'',phone:'',notes:''},
-  to4:{id:'to4',role:'Técnico N1',name:'',area:'tec',zone:'Occidente',email:'',phone:'',notes:''},
-  tc1:{id:'tc1',role:'Técnico N2',name:'Esau',area:'tec',zone:'Centro',email:'',phone:'',notes:''},
-  tc2:{id:'tc2',role:'Técnico N2',name:'Rodrigo',area:'tec',zone:'Centro',email:'',phone:'',notes:''},
-  tc3:{id:'tc3',role:'Técnico N1',name:'Luis Arturo',area:'tec',zone:'Centro',email:'',phone:'',notes:''},
-  tc4:{id:'tc4',role:'Técnico N1',name:'Victor Manuel',area:'tec',zone:'Centro',email:'',phone:'',notes:''},
-  tr1:{id:'tr1',role:'Técnico N2',name:'Manuel',area:'tec',zone:'Oriente',email:'',phone:'',notes:''},
-  tr2:{id:'tr2',role:'Técnico N2',name:'',area:'tec',zone:'Oriente',email:'',phone:'',notes:''},
-  tr3:{id:'tr3',role:'Técnico N1',name:'',area:'tec',zone:'Oriente',email:'',phone:'',notes:''},
+const DANOS_POR_EQUIPO = {
+  gabinete: ['Bisagras dañadas', 'Riel dañado', 'Ventilador dañado'],
+  cableado: ['Keystone dañado', 'Conector dañado', 'Rotura de cable'],
+  ap: ['Quemado', 'Conector dañado', 'No emite SSID'],
+  switch: ['Quemado', 'Puerto dañado', 'Fuente dañada'],
 };
 
-function ini(name,role){const s=name||role;return s.trim().split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();}
-function statusBadge(id){
-  const p=people[id];
-  if(!p.name.trim()||p.name==='Sin Asignar') return '<span class="badge vacio">vacante</span>';
-  return '<span class="badge asignado">asignado</span>';
-}
-function calcStats(){
-  const ids=Object.keys(people);
-  const total=ids.length;
-  const assigned=ids.filter(id=>people[id].name.trim()&&people[id].name!=='Sin Asignar').length;
-  const vacant=total-assigned;
-  const monIds=ids.filter(id=>people[id].area==='mon');
-  const monFilled=monIds.filter(id=>people[id].name.trim()).length;
-  return{total,assigned,vacant,monTotal:monIds.length,monFilled};
-}
-function renderKPIs(){
-  const s=calcStats();
-  const pct=Math.round(s.assigned/s.total*100);
-  return`<div class="kpi-grid">
-    <div class="kpi"><div class="kpi-label">Total puestos</div><div class="kpi-val">${s.total}</div><div class="kpi-sub">en 3 zonas</div></div>
-    <div class="kpi"><div class="kpi-label">Asignados</div><div class="kpi-val">${s.assigned}</div><div class="kpi-sub">${pct}% del total</div></div>
-    <div class="kpi"><div class="kpi-label">Vacantes</div><div class="kpi-val" style="color:#E24B4A">${s.vacant}</div><div class="kpi-sub">por cubrir</div></div>
-    <div class="kpi"><div class="kpi-label">Monitores</div><div class="kpi-val">${s.monFilled}/${s.monTotal}</div><div class="kpi-sub">asignados</div></div>
-    <div class="kpi"><div class="kpi-label">Escuelas</div><div class="kpi-val">5,000</div><div class="kpi-sub">bajo monitoreo</div></div>
-  </div>`;
-}
-function renderZoneCard(zone){
-  const ids=Object.keys(people).filter(id=>people[id].zone===zone);
-  const total=ids.length;
-  const assigned=ids.filter(id=>people[id].name.trim()&&people[id].name!=='Sin Asignar').length;
-  const vacant=total-assigned;
-  const pct=Math.round(assigned/total*100);
-  const barColor=pct===100?'#1D9E75':pct>=60?'#EF9F27':'#E24B4A';
-  return`<div class="zone-card">
-    <div style="font-size:13px;font-weight:500;color:var(--text-primary);margin-bottom:2px">${zone}</div>
-    <div style="font-size:11px;color:var(--text-secondary);margin-bottom:10px">${ZONE_SCHOOLS[zone].toLocaleString()} escuelas</div>
-    <div style="display:flex;gap:14px;margin-bottom:10px">
-      <div><div style="font-size:10px;color:var(--text-tertiary)">Asignados</div><div style="font-size:18px;font-weight:500">${assigned}</div></div>
-      <div><div style="font-size:10px;color:var(--text-tertiary)">Vacantes</div><div style="font-size:18px;font-weight:500;color:#E24B4A">${vacant}</div></div>
-      <div><div style="font-size:10px;color:var(--text-tertiary)">Cobertura</div><div style="font-size:18px;font-weight:500">${pct}%</div></div>
-    </div>
-    <div style="height:4px;background:var(--bg-secondary);border-radius:2px;overflow:hidden">
-      <div style="height:100%;width:${pct}%;background:${barColor};border-radius:2px"></div>
-    </div>
-  </div>`;
-}
-function renderVacantList(){
-  const vacant=Object.values(people).filter(p=>!p.name.trim()||p.name==='Sin Asignar');
-  if(!vacant.length) return'<div class="empty-state">✓ Todos los puestos cubiertos</div>';
-  return vacant.map(p=>`<div class="person-card" onclick="openProfile('${p.id}')">
-    <div class="avatar" style="background:var(--bg-secondary);color:var(--text-secondary)">?</div>
-    <div class="card-info"><div class="card-role">${p.role}</div><div class="card-name">${p.zone} · vacante</div></div>
-    <span class="badge vacio">vacante</span>
-  </div>`).join('');
-}
-function renderOverview(){
-  return renderKPIs()+`
-  <div class="section-label">cobertura por zona</div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">${ZONES.map(renderZoneCard).join('')}</div>
-  <div class="section-label">puestos vacantes</div>
-  ${renderVacantList()}`;
-}
-const orgStructure=[
-  {label:'Jefatura',areas:[{cls:'jef',title:'Jefatura NOC',sub:'Supervisión general · 5,000 escuelas',slots:['j1','j2']}]},
-  {label:'Coordinación por zona',areas:[
-    {cls:'coord',title:'Coord. Occidente',sub:'',slots:['cmo1','cmo2','cto1']},
-    {cls:'coord',title:'Coord. Centro',sub:'',slots:['cmc1','cmc2','ctc1']},
-    {cls:'coord',title:'Coord. Oriente',sub:'',slots:['cmr1','cmr2','ctr1']}
-  ]},
-  {label:'Monitoreo por zona',areas:[
-    {cls:'mon',title:'Monitoreo Occidente',sub:'≈1,250 escuelas',slots:['mo1','mo2','mo3','mo4']},
-    {cls:'mon',title:'Monitoreo Centro',sub:'≈2,500 escuelas',slots:['mc1','mc2','mc3','mc4','mc5','mc6','mc7','mc8']},
-    {cls:'mon',title:'Monitoreo Oriente',sub:'≈1,250 escuelas',slots:['mr1','mr2','mr3','mr4','mr5']}
-  ]},
-  {label:'Área técnica por zona',areas:[
-    {cls:'tec',title:'Técnicos Occidente',sub:'≈1,250 escuelas',slots:['to1','to2','to3','to4']},
-    {cls:'tec',title:'Técnicos Centro',sub:'≈2,500 escuelas',slots:['tc1','tc2','tc3','tc4']},
-    {cls:'tec',title:'Técnicos Oriente',sub:'≈1,250 escuelas',slots:['tr1','tr2','tr3']}
-  ]}
-];
-function renderCard(id){
-  const p=people[id];
-  return`<div class="person-card" onclick="openProfile('${id}')">
-    <div class="avatar">${ini(p.name,p.role)}</div>
-    <div class="card-info">
-      <div class="card-role">${p.role}</div>
-      ${p.name&&p.name!=='Sin Asignar'?`<div class="card-name">${p.name}</div>`:`<div class="card-name" style="color:#E24B4A;font-style:normal">— vacante</div>`}
-    </div>
-    ${statusBadge(id)}
-  </div>`;
-}
-function renderOrg(){
-  return orgStructure.map(s=>`<div class="section-label">${s.label}</div><div class="tier">${s.areas.map(a=>`<div class="area-block ${a.cls}"><div class="area-title">${a.title}</div><div class="area-sub">${a.sub}</div>${a.slots.map(id=>renderCard(id)).join('')}</div>`).join('')}</div>`).join('');
-}
-let teamFilter='all',teamSearch='';
-function renderTeam(){
-  const filtered=Object.values(people).filter(p=>{
-    if(teamFilter==='vacant') return!p.name.trim()||p.name==='Sin Asignar';
-    if(teamFilter==='mon') return p.area==='mon';
-    if(teamFilter==='tec') return p.area==='tec';
-    if(teamFilter==='coord') return p.area==='coord'||p.area==='jef';
-    return true;
-  }).filter(p=>{
-    if(!teamSearch) return true;
-    const q=teamSearch.toLowerCase();
-    return p.name.toLowerCase().includes(q)||p.role.toLowerCase().includes(q)||p.zone.toLowerCase().includes(q);
+const FotoBtn = ({ label, foto, onFoto }) => {
+  const tomarFoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permiso requerido', 'Necesitas permitir el acceso a la cámara.');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'],
+      quality: 0.7,
+      base64: false,
+      allowsEditing: false,
+    });
+    if (!result.canceled) {
+      onFoto(result.assets[0].uri);
+    }
+  };
+
+  return (
+    <View style={{ marginTop: 8 }}>
+      <TouchableOpacity style={[styles.fotoBtn, foto && { borderColor: '#27AE60', backgroundColor: '#EAFAF1' }]} onPress={tomarFoto}>
+        <Text style={styles.fotoBtnIcono}>{foto ? '✅' : '📷'}</Text>
+        <Text style={[styles.fotoBtnTexto, foto && { color: '#1E8449' }]}>{foto ? 'Foto capturada — toca para reemplazar' : label}</Text>
+      </TouchableOpacity>
+      {foto && <Image source={{ uri: foto }} style={{ width: '100%', height: 160, borderRadius: 8, marginTop: 6 }} resizeMode="cover" />}
+    </View>
+  );
+};
+
+const Selector = ({ campo, opciones, datos, actualizar }) => (
+  <View style={styles.selectorRow}>
+    {opciones.map(op => (
+      <TouchableOpacity key={op.valor} style={[styles.chip, datos[campo] === op.valor && styles.chipActivo]} onPress={() => actualizar(campo, op.valor)}>
+        <Text style={[styles.chipTexto, datos[campo] === op.valor && styles.chipTextoActivo]}>{op.label}</Text>
+      </TouchableOpacity>
+    ))}
+  </View>
+);
+
+const MultiSelector = ({ campo, opciones, datos, actualizar }) => {
+  const sel = datos[campo] || [];
+  const toggle = (v) => actualizar(campo, sel.includes(v) ? sel.filter(x => x !== v) : [...sel, v]);
+  return (
+    <View style={styles.selectorRow}>
+      {opciones.map(op => (
+        <TouchableOpacity key={op.valor} style={[styles.chip, sel.includes(op.valor) && styles.chipActivo]} onPress={() => toggle(op.valor)}>
+          <Text style={[styles.chipTexto, sel.includes(op.valor) && styles.chipTextoActivo]}>{op.label}</Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+};
+
+export default function FormularioScreen({ navigation }) {
+  const [seccion, setSeccion] = useState(1);
+  const [sugerencias, setSugerencias] = useState([]);
+  const [buscando, setBuscando] = useState(false);
+  const [ubicacion, setUbicacion] = useState(null);
+  const [fotos, setFotos] = useState({});
+  const busquedaTimeout = useRef(null);
+
+  const setFoto = (clave, uri) => setFotos(prev => ({ ...prev, [clave]: uri }));
+  const [fechaVisita] = useState(new Date().toLocaleDateString('es-SV', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'}));
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        const loc = await Location.getCurrentPositionAsync({});
+        setUbicacion({ lat: loc.coords.latitude.toFixed(6), lon: loc.coords.longitude.toFixed(6) });
+      }
+    })();
+  }, []);
+
+  const [datos, setDatos] = useState({
+    codCE: '', nombreCE: '', departamento: '', distrito: '', matricula: '', turnoMayor: '',
+    infraestructura: '', estadoISP: '', bajadaMbps: '', subidaMbps: '',
+    coberturaWifi: '', cantidadAPs: '', equiposDanados: [],
+    danoDetalles: {}, descripcionDano: '',
+    upsEstado: '', starlinkActivo: '', servicioElectrico: '', sondaMonitoreo: '',
+    segGabineteRiel: false, segAPsInstalados: false, segCableadoInstalado: false,
   });
-  const pills=[{k:'all',l:'Todos'},{k:'coord',l:'Coordinación'},{k:'mon',l:'Monitoreo'},{k:'tec',l:'Técnico'},{k:'vacant',l:'Vacantes'}];
-  return`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-    <input class="field-input" style="flex:1;min-width:160px;max-width:220px" placeholder="Buscar nombre, cargo, zona..." oninput="teamSearch=this.value;renderView('team')" value="${teamSearch}">
-    <div style="display:flex;gap:4px;flex-wrap:wrap">${pills.map(p=>`<button onclick="teamFilter='${p.k}';renderView('team')" style="font-size:11px;padding:4px 10px;border-radius:10px;border:0.5px solid;cursor:pointer;font-family:var(--font-sans);${teamFilter===p.k?'background:#534AB7;color:#EEEDFE;border-color:#534AB7':'background:var(--bg-secondary);color:var(--text-secondary);border-color:var(--border-secondary)'}">${p.l}</button>`).join('')}</div>
+
+  const actualizar = (campo, valor) => setDatos(prev => ({ ...prev, [campo]: valor }));
+
+  // Búsqueda en Firebase con debounce
+  const buscarCE = (texto) => {
+    actualizar('codCE', texto);
+    actualizar('nombreCE', '');
+    setSugerencias([]);
+
+    if (busquedaTimeout.current) clearTimeout(busquedaTimeout.current);
+
+    if (texto.length < 2) {
+      setBuscando(false);
+      return;
+    }
+
+    setBuscando(true);
+    busquedaTimeout.current = setTimeout(async () => {
+      try {
+        const colRef = collection(db, 'centrosEducativos');
+        const resultados = [];
+
+        // Búsqueda por código (prefijo numérico)
+        const qCod = query(
+          colRef,
+          where('cod', '>=', texto),
+          where('cod', '<=', texto + ''),
+          limit(8)
+        );
+        const snapCod = await getDocs(qCod);
+        snapCod.forEach(doc => resultados.push(doc.data()));
+
+        // Si escriben texto (no solo números), buscar también por nombre
+        if (isNaN(texto) && texto.length >= 3) {
+          const textoUpper = texto.toUpperCase();
+          const qNombre = query(
+            colRef,
+            where('nombre', '>=', textoUpper),
+            where('nombre', '<=', textoUpper + ''),
+            limit(5)
+          );
+          const snapNombre = await getDocs(qNombre);
+          snapNombre.forEach(doc => {
+            const d = doc.data();
+            if (!resultados.find(r => r.cod === d.cod)) resultados.push(d);
+          });
+        }
+
+        setSugerencias(resultados.slice(0, 8));
+      } catch (e) {
+        console.error('Error buscando CE:', e);
+      } finally {
+        setBuscando(false);
+      }
+    }, 400);
+  };
+
+  const seleccionarCE = (ce) => {
+    actualizar('codCE', ce.cod);
+    actualizar('nombreCE', ce.nombre);
+    actualizar('departamento', ce.departamento || '');
+    actualizar('distrito', ce.distrito || '');
+    setSugerencias([]);
+    setBuscando(false);
+  };
+
+  const toggleDano = (equipo, detalle) => {
+    const actual = datos.danoDetalles[equipo] || [];
+    const nuevo = actual.includes(detalle) ? actual.filter(d => d !== detalle) : [...actual, detalle];
+    setDatos(prev => ({ ...prev, danoDetalles: { ...prev.danoDetalles, [equipo]: nuevo } }));
+  };
+
+  const calcularPuntaje = () => {
+    let p = 0;
+    if (datos.estadoISP === 'operativo') p += 20;
+    else if (datos.estadoISP === 'degradado') p += 10;
+    const bajada = parseFloat(datos.bajadaMbps) || 0;
+    const turno = parseFloat(datos.turnoMayor) || 1;
+    if (bajada / turno >= 0.4) p += 18;
+    if (datos.coberturaWifi === 'excelente') p += 15;
+    else if (datos.coberturaWifi === 'buena') p += 11;
+    else if (datos.coberturaWifi === 'regular') p += 6;
+    else if (datos.coberturaWifi === 'deficiente') p += 2;
+    const eq = datos.equiposDanados || [];
+    if (eq.length === 0) p += 12;
+    else if (eq.length === 1) p += 8;
+    else if (eq.length === 2) p += 4;
+    if (datos.starlinkActivo === 'si') p += 8;
+    if (datos.upsEstado === 'funcional') p += 7;
+    else if (datos.upsEstado === 'parcial') p += 3;
+    if (datos.servicioElectrico === 'bueno') p += 5;
+    else if (datos.servicioElectrico === 'regular') p += 3;
+    else if (datos.servicioElectrico === 'malo') p += 1;
+    if (datos.sondaMonitoreo === 'si') p += 3;
+    // Dimensión 5 — Seguridad Física (10 pts, ~3.33 cada criterio)
+    const segChecks = [datos.segGabineteRiel, datos.segAPsInstalados, datos.segCableadoInstalado].filter(Boolean).length;
+    p += Math.round(segChecks / 3 * 10);
+    return Math.round(p);
+  };
+
+  const intervenido = datos.infraestructura === 'intervenido';
+
+  const generarPDF = async (puntaje, estado, color) => {
+    const tecnico = auth.currentUser?.email || 'Técnico';
+    const segPts = Math.round([datos.segGabineteRiel, datos.segAPsInstalados, datos.segCableadoInstalado].filter(Boolean).length / 3 * 10);
+    const bajada = parseFloat(datos.bajadaMbps) || 0;
+    const turno = parseFloat(datos.turnoMayor) || 1;
+    const mbpsAlumno = (bajada / turno).toFixed(3);
+    const cumpleBanda = bajada / turno >= 0.4;
+    const eq = (datos.equiposDanados || []).filter(e => e !== 'ninguno');
+
+    const ptsISP = datos.estadoISP === 'operativo' ? 20 : datos.estadoISP === 'degradado' ? 10 : 0;
+    const ptsBanda = cumpleBanda ? 18 : 0;
+    const ptsWifi = datos.coberturaWifi === 'excelente' ? 15 : datos.coberturaWifi === 'buena' ? 11 : datos.coberturaWifi === 'regular' ? 6 : datos.coberturaWifi === 'deficiente' ? 2 : 0;
+    const ptsHw = eq.length === 0 ? 12 : eq.length === 1 ? 8 : eq.length === 2 ? 4 : 0;
+    const ptsStarlink = datos.starlinkActivo === 'si' ? 8 : 0;
+    const ptsUPS = datos.upsEstado === 'funcional' ? 7 : datos.upsEstado === 'parcial' ? 3 : 0;
+    const ptsElec = datos.servicioElectrico === 'bueno' ? 5 : datos.servicioElectrico === 'regular' ? 3 : datos.servicioElectrico === 'malo' ? 1 : 0;
+    const ptsSonda = datos.sondaMonitoreo === 'si' ? 3 : 0;
+
+    // Convertir fotos — iOS acepta URI directo, Android necesita base64
+    const toImgSrc = async (uri) => {
+      if (!uri) return null;
+      if (Platform.OS === 'ios') return uri;
+      try {
+        const b64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+        return `data:image/jpeg;base64,${b64}`;
+      } catch { return null; }
+    };
+
+    const [imgGeneral, imgInfra, imgSpeedtest, imgGabExt, imgGabInt, imgSwitch, imgRouter, imgUPS] = await Promise.all([
+      toImgSrc(fotos.ceGeneral), toImgSrc(fotos.ceInfraestructura), toImgSrc(fotos.speedtestLAN),
+      toImgSrc(fotos.gabineteExterno), toImgSrc(fotos.gabineteInterno), toImgSrc(fotos.switch),
+      toImgSrc(fotos.router), toImgSrc(fotos.ups),
+    ]);
+
+    const fotoCard = (titulo, src) => src ? `
+      <div class="foto-card">
+        <img src="${src}" style="width:100%;height:160px;object-fit:cover;border-radius:6px;display:block;"/>
+        <p style="margin:6px 0 0;font-size:11px;color:#555;text-align:center">${titulo}</p>
+      </div>` : '';
+
+    const barra = (pts, max) => {
+      const pct = Math.round(pts / max * 100);
+      const c = pct >= 60 ? '#27AE60' : pct >= 30 ? '#F39C12' : '#E74C3C';
+      return `<div style="background:#eee;border-radius:4px;height:10px;flex:1;margin:0 8px;">
+        <div style="background:${c};width:${pct}%;height:10px;border-radius:4px;"></div>
+      </div>`;
+    };
+
+    const filaDim = (icono, nombre, pts, max) => `
+      <div style="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid #eee;">
+        <span style="width:24px;font-size:14px">${icono}</span>
+        <span style="flex:1;font-size:12px;color:#333">${nombre}</span>
+        ${barra(pts, max)}
+        <span style="font-size:13px;font-weight:bold;color:${pts >= max * 0.6 ? '#27AE60' : pts > 0 ? '#F39C12' : '#E74C3C'};width:44px;text-align:right">${pts}/${max}</span>
+      </div>`;
+
+    const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #f5f7fa; color: #222; font-size: 13px; }
+    .page { max-width: 720px; margin: 0 auto; background: white; }
+    .header { background: #1A3A5C; color: white; padding: 24px 28px; }
+    .header h1 { font-size: 15px; font-weight: bold; letter-spacing: 0.5px; }
+    .header h2 { font-size: 20px; font-weight: bold; margin: 6px 0 4px; }
+    .header p { font-size: 12px; opacity: 0.8; }
+    .content { padding: 24px 28px; }
+    .score-section { display: flex; align-items: center; background: #f8fafc; border-radius: 12px; border: 2px solid ${color}; padding: 20px 24px; margin-bottom: 24px; gap: 24px; }
+    .score-circle { text-align: center; min-width: 100px; }
+    .score-num { font-size: 60px; font-weight: bold; color: ${color}; line-height: 1; }
+    .score-label { font-size: 12px; color: #888; }
+    .score-estado { font-size: 18px; font-weight: bold; color: ${color}; margin-top: 4px; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; flex: 1; }
+    .info-item { background: white; border-radius: 6px; padding: 8px 12px; border: 1px solid #eee; }
+    .info-item .lbl { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.4px; }
+    .info-item .val { font-size: 13px; font-weight: bold; color: #1A3A5C; margin-top: 2px; }
+    .card { background: white; border: 1px solid #e8ecf0; border-radius: 10px; padding: 16px 20px; margin-bottom: 16px; }
+    .card-title { font-size: 13px; font-weight: bold; color: #1A3A5C; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #EBF5FB; }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: bold; }
+    .ok { background: #EAFAF1; color: #1E8449; }
+    .warn { background: #FEF9E7; color: #B7950B; }
+    .bad { background: #FDEDEC; color: #C0392B; }
+    .dato { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid #f0f0f0; font-size: 12px; }
+    .dato .lbl { color: #666; }
+    .dato .val { font-weight: bold; color: #222; }
+    .foto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+    .foto-card { background: #f8fafc; border-radius: 8px; padding: 8px; border: 1px solid #eee; }
+    .banda-box { border-radius: 8px; padding: 12px 16px; margin-top: 10px; text-align: center; background: ${cumpleBanda ? '#EAFAF1' : '#FDEDEC'}; border: 2px solid ${cumpleBanda ? '#27AE60' : '#E74C3C'}; }
+    .footer { background: #1A3A5C; color: white; padding: 16px 28px; font-size: 11px; opacity: 0.9; margin-top: 8px; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <h1>MINISTERIO DE EDUCACIÓN DE EL SALVADOR · Programa Tecnología Educativa</h1>
+    <h2>${datos.nombreCE || 'Centro Educativo'}</h2>
+    <p>Código: ${datos.codCE || '—'} &nbsp;·&nbsp; ${datos.departamento || '—'} &nbsp;·&nbsp; Distrito: ${datos.distrito || '—'}</p>
+    <p>${fechaVisita} &nbsp;·&nbsp; Técnico: ${tecnico}</p>
+    <p>GPS: Lat ${ubicacion?.lat || '—'} | Lon ${ubicacion?.lon || '—'}</p>
   </div>
-  ${filtered.length===0?'<div class="empty-state">Sin resultados</div>':`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px">${filtered.map(p=>`<div class="person-card" onclick="openProfile('${p.id}')"><div class="avatar ${p.area}">${ini(p.name,p.role)}</div><div class="card-info"><div class="card-role">${p.role}</div>${p.name&&p.name!=='Sin Asignar'?`<div class="card-name">${p.name} · ${p.zone}</div>`:`<div class="card-name" style="color:#E24B4A;font-style:normal">${p.zone} · vacante</div>`}</div>${statusBadge(p.id)}</div>`).join('')}</div>`}`;
-}
-let currentView='overview';
-function showView(v){
-  currentView=v;
-  document.querySelectorAll('.nav-btn').forEach((b,i)=>{
-    const map={0:'overview',1:'org',2:'team'};
-    b.classList.toggle('active',map[i]===v);
-  });
-  renderView(v);
-}
-function renderView(v){
-  document.querySelectorAll('.view-page').forEach(el=>el.classList.remove('active'));
-  const el=document.getElementById('v-'+v);
-  if(el){el.classList.add('active');el.innerHTML=v==='overview'?renderOverview():v==='org'?renderOrg():renderTeam();}
-}
-function openProfile(id){
-  const p=people[id];
-  const av=ini(p.name,p.role);
-  const avcol=p.area==='mon'?'background:#9FE1CB;color:#085041':p.area==='tec'?'background:#F5C4B3;color:#712B13':'background:#CECBF6;color:#3C3489';
-  const roleOpts=['Monitor','Técnico N1','Técnico N2','Supervisor Monitoreo','Supervisor Técnico','Coordinador Técnico','Jefe NOC'].map(r=>`<option${p.role===r?' selected':''}>${r}</option>`).join('');
-  const zoneOpts=['—','Occidente','Centro','Oriente'].map(z=>`<option${p.zone===z?' selected':''}>${z}</option>`).join('');
-  document.getElementById('panel-content').innerHTML=`
-    <div class="panel-header">
-      <span class="panel-title">Perfil de puesto</span>
-      <button class="close-btn" onclick="closeOverlay()">×</button>
+
+  <div class="content">
+
+    <!-- PUNTAJE GENERAL -->
+    <div class="score-section">
+      <div class="score-circle">
+        <div class="score-num">${puntaje}</div>
+        <div class="score-label">/ 100 pts</div>
+        <div class="score-estado">${estado}</div>
+      </div>
+      <div class="info-grid">
+        <div class="info-item"><div class="lbl">Matrícula total</div><div class="val">${datos.matricula || '—'}</div></div>
+        <div class="info-item"><div class="lbl">Turno mayor</div><div class="val">${datos.turnoMayor || '—'} alumnos</div></div>
+        <div class="info-item"><div class="lbl">ISP</div><div class="val">${datos.estadoISP || '—'}</div></div>
+        <div class="info-item"><div class="lbl">WiFi</div><div class="val">${datos.coberturaWifi || '—'}</div></div>
+        <div class="info-item"><div class="lbl">APs instalados</div><div class="val">${datos.cantidadAPs || '—'}</div></div>
+        <div class="info-item"><div class="lbl">Infraestructura</div><div class="val">${datos.infraestructura || '—'}</div></div>
+      </div>
     </div>
-    <div class="profile-hero">
-      <div class="profile-av" style="${avcol}">${av}</div>
-      <div><div class="profile-name">${p.name||'— Sin asignar'}</div><div class="profile-role">${p.role} · ${p.zone}</div></div>
+
+    <!-- FOTOS GENERALES -->
+    ${imgGeneral || imgInfra ? `
+    <div class="card">
+      <div class="card-title">📸 Evidencia del Centro Educativo</div>
+      <div class="foto-grid">
+        ${fotoCard('Vista general del CE', imgGeneral)}
+        ${fotoCard('Estado de infraestructura', imgInfra)}
+      </div>
+    </div>` : ''}
+
+    <!-- DIMENSIONES -->
+    <div class="card">
+      <div class="card-title">📊 Evaluación por Dimensión</div>
+      ${filaDim('🌐', 'Conectividad ISP', ptsISP, 20)}
+      ${filaDim('📊', 'Ancho de Banda', ptsBanda, 18)}
+      ${filaDim('📶', 'Cobertura WiFi', ptsWifi, 15)}
+      ${filaDim('🔧', 'Estado del Hardware', ptsHw, 12)}
+      ${filaDim('🔒', 'Seguridad Física', segPts, 10)}
+      ${filaDim('🛰', 'Redundancia Starlink', ptsStarlink, 8)}
+      ${filaDim('🔋', 'UPS Funcional', ptsUPS, 7)}
+      ${filaDim('⚡', 'Servicio Eléctrico', ptsElec, 5)}
+      ${filaDim('📡', 'Sonda de Monitoreo', ptsSonda, 3)}
     </div>
-    <div>${[['Área',p.area==='mon'?'Monitoreo':p.area==='tec'?'Técnica':p.area==='jef'?'Jefatura':'Coordinación'],['Zona',p.zone],['Estado',p.name&&p.name!=='Sin Asignar'?'Asignado':'Vacante'],['Email',p.email||'—'],['Teléfono',p.phone||'—'],['Notas',p.notes||'—']].map(([k,v])=>`<div class="info-row"><span class="info-key">${k}</span><span class="info-val">${v}</span></div>`).join('')}</div>
-    <div style="height:1px;background:var(--border-tertiary);margin:12px 0 4px"></div>
-    <div style="font-size:11px;color:var(--text-secondary);margin-bottom:8px;font-weight:500">EDITAR PUESTO</div>
-    <div class="field-label">Nombre</div><input class="field-input" id="ed-name" value="${p.name}" placeholder="Nombre completo">
-    <div class="field-label">Cargo</div><select class="field-select" id="ed-role">${roleOpts}</select>
-    <div class="field-label">Zona</div><select class="field-select" id="ed-zone">${zoneOpts}</select>
-    <div class="field-label">Email</div><input class="field-input" id="ed-email" value="${p.email}" placeholder="correo@ejemplo.com">
-    <div class="field-label">Teléfono</div><input class="field-input" id="ed-phone" value="${p.phone}" placeholder="+503 0000-0000">
-    <div class="field-label">Notas</div><input class="field-input" id="ed-notes" value="${p.notes}" placeholder="Observaciones...">
-    <div class="btn-row">
-      <button class="btn danger" onclick="clearPerson('${id}')">Vaciar</button>
-      <button class="btn" onclick="closeOverlay()">Cancelar</button>
-      <button class="btn primary" onclick="savePerson('${id}')">Guardar</button>
-    </div>`;
-  document.getElementById('overlay').classList.add('open');
-}
-function clearPerson(id){people[id].name='';people[id].email='';people[id].phone='';people[id].notes='';closeOverlay();renderView(currentView);}
-function savePerson(id){
-  people[id].name=document.getElementById('ed-name').value.trim();
-  people[id].role=document.getElementById('ed-role').value;
-  people[id].zone=document.getElementById('ed-zone').value;
-  people[id].email=document.getElementById('ed-email').value.trim();
-  people[id].phone=document.getElementById('ed-phone').value.trim();
-  people[id].notes=document.getElementById('ed-notes').value.trim();
-  closeOverlay();renderView(currentView);
-}
-function closeOverlay(){document.getElementById('overlay').classList.remove('open');}
-document.getElementById('overlay').addEventListener('click',function(e){if(e.target===this)closeOverlay();});
-document.addEventListener('keydown',function(e){if(e.key==='Escape')closeOverlay();});
-renderView('overview');
-</script>
+
+    <!-- CONECTIVIDAD -->
+    <div class="card">
+      <div class="card-title">🌐 Conectividad y Ancho de Banda</div>
+      <div class="dato"><span class="lbl">Estado ISP</span><span class="badge ${datos.estadoISP === 'operativo' ? 'ok' : datos.estadoISP === 'degradado' ? 'warn' : 'bad'}">${datos.estadoISP || '—'}</span></div>
+      <div class="dato"><span class="lbl">Bajada medida</span><span class="val">${datos.bajadaMbps || '—'} Mbps</span></div>
+      <div class="dato"><span class="lbl">Subida medida</span><span class="val">${datos.subidaMbps || '—'} Mbps</span></div>
+      <div class="banda-box">
+        <div style="font-size:22px;font-weight:bold;color:${cumpleBanda ? '#27AE60' : '#E74C3C'}">${mbpsAlumno} Mbps/alumno</div>
+        <div style="font-size:13px;font-weight:bold;color:${cumpleBanda ? '#27AE60' : '#E74C3C'};margin-top:4px">${cumpleBanda ? '✅ CUMPLE el mínimo de 0.4 Mbps/alumno' : '❌ NO CUMPLE — mínimo requerido: 0.4 Mbps/alumno'}</div>
+      </div>
+      ${imgRouter || imgSpeedtest ? `
+      <div class="foto-grid" style="margin-top:12px">
+        ${fotoCard('Router / Equipo ISP', imgRouter)}
+        ${fotoCard('Evidencia Speedtest LAN', imgSpeedtest)}
+      </div>` : ''}
+    </div>
+
+    <!-- HARDWARE -->
+    <div class="card">
+      <div class="card-title">🔧 Hardware y Equipos</div>
+      <div class="dato"><span class="lbl">Equipos con daño</span><span class="badge ${eq.length === 0 ? 'ok' : 'bad'}">${eq.length === 0 ? 'Sin daños' : eq.join(', ')}</span></div>
+      ${eq.length > 0 ? eq.map(e => `<div class="dato"><span class="lbl">${e}</span><span class="val">${(datos.danoDetalles[e] || []).join(', ')}</span></div>`).join('') : ''}
+      <div class="dato"><span class="lbl">UPS</span><span class="badge ${datos.upsEstado === 'funcional' ? 'ok' : datos.upsEstado === 'parcial' ? 'warn' : 'bad'}">${datos.upsEstado || '—'}</span></div>
+      <div class="dato"><span class="lbl">Starlink activo</span><span class="badge ${datos.starlinkActivo === 'si' ? 'ok' : 'bad'}">${datos.starlinkActivo === 'si' ? 'Sí' : 'No'}</span></div>
+      <div class="dato"><span class="lbl">Servicio eléctrico</span><span class="val">${datos.servicioElectrico || '—'}</span></div>
+      <div class="dato"><span class="lbl">Sonda de monitoreo</span><span class="badge ${datos.sondaMonitoreo === 'si' ? 'ok' : 'bad'}">${datos.sondaMonitoreo === 'si' ? 'Sí' : 'No'}</span></div>
+      ${imgGabExt || imgGabInt || imgSwitch || imgUPS ? `
+      <div class="foto-grid" style="margin-top:12px">
+        ${fotoCard('Gabinete exterior', imgGabExt)}
+        ${fotoCard('Gabinete interior', imgGabInt)}
+        ${fotoCard('Switch', imgSwitch)}
+        ${fotoCard('UPS', imgUPS)}
+      </div>` : ''}
+      ${datos.descripcionDano ? `<div style="margin-top:10px;background:#f8f9fa;border-radius:6px;padding:10px;font-size:12px;color:#444;line-height:1.5">${datos.descripcionDano}</div>` : ''}
+    </div>
+
+    <!-- SEGURIDAD FÍSICA -->
+    <div class="card">
+      <div class="card-title">🔒 Seguridad Física de la Instalación</div>
+      <div class="dato"><span class="lbl">Gabinete instalado con riel strut</span><span class="badge ${datos.segGabineteRiel ? 'ok' : 'bad'}">${datos.segGabineteRiel ? '✅ Cumple' : '❌ No cumple'}</span></div>
+      <div class="dato"><span class="lbl">Access Points instalados correctamente</span><span class="badge ${datos.segAPsInstalados ? 'ok' : 'bad'}">${datos.segAPsInstalados ? '✅ Cumple' : '❌ No cumple'}</span></div>
+      <div class="dato"><span class="lbl">Cableado instalado correctamente</span><span class="badge ${datos.segCableadoInstalado ? 'ok' : 'bad'}">${datos.segCableadoInstalado ? '✅ Cumple' : '❌ No cumple'}</span></div>
+      <div style="margin-top:10px;text-align:center;font-weight:bold;font-size:15px;color:${color}">Puntaje seguridad física: ${segPts} / 10 pts</div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <p>InspeccionTecnica App v1.0 &nbsp;·&nbsp; Ministerio de Educación de El Salvador &nbsp;·&nbsp; ${fechaVisita}</p>
+    <p style="margin-top:4px;opacity:0.7">Técnico: ${tecnico} &nbsp;·&nbsp; Documento generado automáticamente</p>
+  </div>
+
+</div>
 </body>
-</html>
+</html>`;
+
+    const { uri } = await Print.printToFileAsync({ html, base64: false });
+    await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: `Inspección ${datos.nombreCE}` });
+  };
+
+  const guardarInspeccion = async () => {
+    const puntaje = calcularPuntaje();
+    const estado = puntaje >= 80 ? 'Excelente' : puntaje >= 60 ? 'Bueno' : puntaje >= 40 ? 'Regular' : 'Crítico';
+    const color = puntaje >= 80 ? '#27AE60' : puntaje >= 60 ? '#2E86C1' : puntaje >= 40 ? '#F39C12' : '#E74C3C';
+    try {
+      const inspeccion = {
+        ...datos,
+        lat: ubicacion?.lat || null,
+        lon: ubicacion?.lon || null,
+        fechaVisita: fechaVisita,
+        fechaCreacion: new Date(),
+        puntajeIA: puntaje,
+        estado: puntaje >= 80 ? 'excelente' : puntaje >= 60 ? 'bueno' : puntaje >= 40 ? 'regular' : 'critico',
+        sincronizado: true,
+      };
+      await setDoc(doc(db, 'inspecciones', datos.codCE), inspeccion);
+      Alert.alert('✅ Guardado', `Inspección de ${datos.nombreCE}\nPuntaje: ${puntaje}/100 — ${estado}`, [
+        { text: 'Generar PDF', onPress: async () => {
+          await generarPDF(puntaje, estado, color);
+          navigation.navigate('Home');
+        }},
+      ]);
+    } catch (error) {
+      Alert.alert('❌ Error', 'No se pudo guardar. Verifica tu conexión a internet.');
+    }
+  };
+
+  const renderSeccion = () => {
+    if (seccion === 1) return (
+      <View>
+        <Text style={styles.seccionTitulo}>📍 Datos del Centro Educativo</Text>
+        <Text style={styles.label}>Código CE</Text>
+        <View>
+          <TextInput
+            style={styles.input}
+            placeholder="Escribe el código o nombre para buscar..."
+            value={datos.codCE}
+            onChangeText={buscarCE}
+            keyboardType="numeric"
+            autoCorrect={false}
+          />
+          {buscando && (
+            <View style={styles.buscandoBox}>
+              <ActivityIndicator size="small" color="#2E86C1" />
+              <Text style={styles.buscandoTexto}>Buscando...</Text>
+            </View>
+          )}
+          {sugerencias.length > 0 && (
+            <View style={styles.sugerenciaBox}>
+              {sugerencias.map(ce => (
+                <TouchableOpacity key={ce.cod} style={styles.sugerenciaItem} onPress={() => seleccionarCE(ce)}>
+                  <Text style={styles.sugerenciaCod}>{ce.cod}</Text>
+                  <Text style={styles.sugerenciaNombre}>{ce.nombre}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
+        <Text style={styles.label}>Nombre del CE</Text>
+        <TextInput
+          style={[styles.input, { backgroundColor: datos.nombreCE ? '#EAFAF1' : '#f0f0f0', color: datos.nombreCE ? '#1E8449' : '#999' }]}
+          value={datos.nombreCE}
+          placeholder="Se completa automáticamente al seleccionar"
+          editable={false}
+        />
+        <Text style={styles.label}>Matrícula total</Text>
+        <TextInput style={styles.input} placeholder="Total de estudiantes" value={datos.matricula} onChangeText={v => actualizar('matricula', v)} keyboardType="numeric" />
+        <Text style={styles.label}>Matrícula turno mayor</Text>
+        <TextInput style={styles.input} placeholder="Alumnos en el turno más grande" value={datos.turnoMayor} onChangeText={v => actualizar('turnoMayor', v)} keyboardType="numeric" />
+        <Text style={styles.label}>Fecha y hora de visita</Text>
+        <TextInput style={[styles.input, {backgroundColor:'#f0f0f0'}]} value={fechaVisita} editable={false} />
+        <Text style={styles.label}>Ubicación GPS</Text>
+        <TextInput style={[styles.input, {backgroundColor:'#f0f0f0'}]} value={ubicacion ? `Lat: ${ubicacion.lat}  |  Lon: ${ubicacion.lon}` : 'Obteniendo ubicación...'} editable={false} />
+        <Selector campo="infraestructura" opciones={[{label:'Intervenido',valor:'intervenido'},{label:'Remodelado',valor:'remodelado'},{label:'Nunca Intervenido',valor:'nunca'}]} datos={datos} actualizar={actualizar} />
+        {datos.infraestructura !== '' && (
+          <View style={styles.infoBox}>
+            {datos.infraestructura === 'intervenido' && <Text style={styles.textoRojo}>⚠️ CE en remodelación. La inspección se registra solo aquí.</Text>}
+            {datos.infraestructura === 'remodelado' && <Text style={styles.textoVerde}>✅ CE remodelado y operativo. Continúa la inspección.</Text>}
+            {datos.infraestructura === 'nunca' && <Text style={styles.textoAzul}>ℹ️ CE nunca intervenido. Continúa la inspección.</Text>}
+          </View>
+        )}
+        <Text style={styles.label}>Evidencia fotográfica</Text>
+        <FotoBtn label="Foto 1 — Vista general del CE" foto={fotos.ceGeneral} onFoto={uri => setFoto('ceGeneral', uri)} />
+        <FotoBtn label="Foto 2 — Estado de infraestructura" foto={fotos.ceInfraestructura} onFoto={uri => setFoto('ceInfraestructura', uri)} />
+        {intervenido && (
+          <TouchableOpacity style={[styles.botonGuardar, {marginTop:20}]} onPress={() => Alert.alert('✅ Registrado', 'Inspección de CE Intervenido guardada.')}>
+            <Text style={styles.botonTexto}>Guardar y Finalizar</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    );
+    if (seccion === 2) return (
+      <View>
+        <Text style={styles.seccionTitulo}>🌐 Conectividad ISP y Ancho de Banda</Text>
+        <Text style={styles.label}>Estado del enlace ISP</Text>
+        <Selector campo="estadoISP" opciones={[{label:'Operativo',valor:'operativo'},{label:'Degradado',valor:'degradado'},{label:'Caído',valor:'caido'}]} datos={datos} actualizar={actualizar} />
+        <FotoBtn label="Foto del router / equipo ISP" foto={fotos.router} onFoto={uri => setFoto('router', uri)} />
+        <Text style={styles.label}>Bajada medida (Mbps)</Text>
+        <TextInput style={styles.input} placeholder="Ej: 45.3" value={dato
