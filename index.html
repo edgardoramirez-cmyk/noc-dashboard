@@ -382,7 +382,6 @@ function avcol(area){
 function openProfile(id){
   const p=people[id];
   const av=ini(p.name,p.role);
-  const roleOpts=['Monitor','Supervisor Monitoreo','Supervisor de Zona','Experto en Conectividad','Técnico Master','Técnico N1','Técnico N2 de Campo','Jefe NOC'].map(r=>`<option${p.role===r?' selected':''}>${r}</option>`).join('');
   const zoneOpts=['—','Occidente','Centro','Oriente'].map(z=>`<option${p.zone===z?' selected':''}>${z}</option>`).join('');
   document.getElementById('panel-content').innerHTML=`
     <div class="panel-header">
@@ -397,7 +396,7 @@ function openProfile(id){
     <div style="height:1px;background:var(--border-tertiary);margin:12px 0 4px"></div>
     <div style="font-size:11px;color:var(--text-secondary);margin-bottom:8px;font-weight:500">EDITAR PUESTO</div>
     <div class="field-label">Nombre</div><input class="field-input" id="ed-name" value="${p.name}" placeholder="Nombre completo">
-    <div class="field-label">Cargo</div><select class="field-select" id="ed-role">${roleOpts}</select>
+    <div class="field-label">Cargo</div><input class="field-input" id="ed-role" value="${p.role}" placeholder="Ej. Técnico Master, Supervisor de Zona...">
     <div class="field-label">Zona</div><select class="field-select" id="ed-zone">${zoneOpts}</select>
     <div class="field-label">Email</div><input class="field-input" id="ed-email" value="${p.email}" placeholder="correo@ejemplo.com">
     <div class="field-label">Teléfono</div><input class="field-input" id="ed-phone" value="${p.phone}" placeholder="+503 0000-0000">
