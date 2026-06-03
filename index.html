@@ -312,19 +312,119 @@ const orgStructure=[
   ]}
 ];
 
-function renderCard(id){
+let editMode=false;
+
+function renderCard(id,sIdx,aIdx){
   const p=people[id];
-  return`<div class="person-card" onclick="openProfile('${id}')">
+  const delBtn=editMode?`<button onclick="event.stopPropagation();deletePerson('${id}',${sIdx},${aIdx})" style="background:#FCEBEB;border:none;border-radius:6px;color:#A32D2D;font-size:11px;padding:2px 7px;cursor:pointer;flex-shrink:0">✕</button>`:'';
+  return`<div class="person-card" onclick="openProfile('${id}')" style="${editMode?'border-color:#534AB7':''}">
     <div class="avatar">${ini(p.name,p.role)}</div>
     <div class="card-info">
       <div class="card-role">${p.role}</div>
       ${p.name&&p.name!=='Sin Asignar'?`<div class="card-name">${p.name}</div>`:`<div class="card-name" style="color:#E24B4A;font-style:normal">— vacante</div>`}
     </div>
-    ${statusBadge(id)}
+    ${editMode?delBtn:statusBadge(id)}
   </div>`;
 }
+
 function renderOrg(){
-  return orgStructure.map(s=>`<div class="section-label">${s.label}</div><div class="tier">${s.areas.map(a=>`<div class="area-block ${a.cls}"><div class="area-title">${a.title}</div><div class="area-sub">${a.sub}</div>${a.slots.map(id=>renderCard(id)).join('')}</div>`).join('')}</div>`).join('');
+  const editBar=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding:10px 14px;background:${editMode?'#EEEDFE':'var(--bg-secondary)'};border-radius:var(--radius-md);border:0.5px solid ${editMode?'#534AB7':'var(--border-tertiary)'}">
+    <span style="font-size:12px;color:${editMode?'#3C3489':'var(--text-secondary)'};font-weight:500">${editMode?'✏️ Modo edición activo — haz clic en ✕ para eliminar':'Estructura del organigrama'}</span>
+    <div style="display:flex;gap:6px">
+      ${editMode?`<button onclick="openAddSection()" class="btn primary" style="font-size:11px;padding:4px 12px">+ Sección</button>`:''}
+      <button onclick="editMode=!editMode;renderView('org')" class="btn ${editMode?'danger':'primary'}" style="font-size:11px;padding:4px 12px">${editMode?'Salir':'Editar estructura'}</button>
+    </div>
+  </div>`;
+
+  const sections=orgStructure.map((s,sIdx)=>{
+    const delSecBtn=editMode?`<button onclick="deleteSection(${sIdx})" style="background:#FCEBEB;border:none;border-radius:6px;color:#A32D2D;font-size:10px;padding:2px 8px;cursor:pointer;margin-left:8px">✕ sección</button>`:'';
+    const areas=s.areas.map((a,aIdx)=>{
+      const addSlotBtn=editMode?`<button onclick="addSlot(${sIdx},${aIdx})" style="width:100%;margin-top:6px;background:none;border:1px dashed var(--border-secondary);border-radius:var(--radius-md);color:var(--text-tertiary);font-size:11px;padding:6px;cursor:pointer">+ puesto</button>`:'';
+      const delBlockBtn=editMode?`<button onclick="deleteBlock(${sIdx},${aIdx})" style="float:right;background:#FCEBEB;border:none;border-radius:6px;color:#A32D2D;font-size:10px;padding:1px 7px;cursor:pointer">✕</button>`:'';
+      return`<div class="area-block ${a.cls}">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2px">
+          <div class="area-title">${a.title}</div>${delBlockBtn}
+        </div>
+        <div class="area-sub">${a.sub}</div>
+        ${a.slots.map(id=>renderCard(id,sIdx,aIdx)).join('')}
+        ${addSlotBtn}
+      </div>`;
+    }).join('');
+    const addBlockBtn=editMode?`<div style="flex:1;min-width:180px;display:flex;align-items:center;justify-content:center"><button onclick="openAddBlock(${sIdx})" style="background:none;border:1px dashed var(--border-secondary);border-radius:var(--radius-lg);color:var(--text-tertiary);font-size:11px;padding:14px 20px;cursor:pointer;width:100%">+ bloque</button></div>`:'';
+    return`<div class="section-label" style="display:flex;align-items:center">${s.label}${delSecBtn}</div><div class="tier">${areas}${addBlockBtn}</div>`;
+  }).join('');
+
+  return editBar+sections;
+}
+
+// ── EDICIÓN ESTRUCTURAL ──────────────────────────────────────────────
+function deleteSection(sIdx){
+  if(!confirm('¿Eliminar esta sección completa y todos sus puestos?')) return;
+  const s=orgStructure[sIdx];
+  s.areas.forEach(a=>a.slots.forEach(id=>delete people[id]));
+  orgStructure.splice(sIdx,1);
+  renderView('org');
+}
+function deleteBlock(sIdx,aIdx){
+  if(!confirm('¿Eliminar este bloque y todos sus puestos?')) return;
+  const a=orgStructure[sIdx].areas[aIdx];
+  a.slots.forEach(id=>delete people[id]);
+  orgStructure[sIdx].areas.splice(aIdx,1);
+  if(orgStructure[sIdx].areas.length===0) orgStructure.splice(sIdx,1);
+  renderView('org');
+}
+function deletePerson(id,sIdx,aIdx){
+  if(!confirm('¿Eliminar este puesto?')) return;
+  delete people[id];
+  orgStructure[sIdx].areas[aIdx].slots=orgStructure[sIdx].areas[aIdx].slots.filter(s=>s!==id);
+  renderView('org');
+}
+function addSlot(sIdx,aIdx){
+  const a=orgStructure[sIdx].areas[aIdx];
+  const id='slot_'+Date.now();
+  people[id]={id,role:'Nuevo puesto',name:'',area:a.cls,zone:'—',email:'',phone:'',notes:''};
+  a.slots.push(id);
+  renderView('org');
+  setTimeout(()=>openProfile(id),50);
+}
+
+function openAddBlock(sIdx){
+  const s=orgStructure[sIdx];
+  const clsOpts=['jef','coord','mon','sup','exp','mas','n1','n2'].map(c=>`<option value="${c}">${c}</option>`).join('');
+  document.getElementById('panel-content').innerHTML=`
+    <div class="panel-header"><span class="panel-title">Agregar bloque</span><button class="close-btn" onclick="closeOverlay()">×</button></div>
+    <div class="field-label">Título del bloque</div><input class="field-input" id="ab-title" placeholder="Ej. Técnicos Sur">
+    <div class="field-label">Subtítulo</div><input class="field-input" id="ab-sub" placeholder="Ej. ≈500 escuelas">
+    <div class="field-label">Color (área)</div>
+    <select class="field-select" id="ab-cls">${clsOpts}</select>
+    <div class="btn-row">
+      <button class="btn" onclick="closeOverlay()">Cancelar</button>
+      <button class="btn primary" onclick="saveAddBlock(${sIdx})">Agregar</button>
+    </div>`;
+  document.getElementById('overlay').classList.add('open');
+}
+function saveAddBlock(sIdx){
+  const title=document.getElementById('ab-title').value.trim()||'Nuevo bloque';
+  const sub=document.getElementById('ab-sub').value.trim();
+  const cls=document.getElementById('ab-cls').value;
+  orgStructure[sIdx].areas.push({cls,title,sub,slots:[]});
+  closeOverlay();renderView('org');
+}
+
+function openAddSection(){
+  document.getElementById('panel-content').innerHTML=`
+    <div class="panel-header"><span class="panel-title">Agregar sección</span><button class="close-btn" onclick="closeOverlay()">×</button></div>
+    <div class="field-label">Nombre de la sección</div><input class="field-input" id="as-label" placeholder="Ej. Área de Soporte">
+    <div class="btn-row">
+      <button class="btn" onclick="closeOverlay()">Cancelar</button>
+      <button class="btn primary" onclick="saveAddSection()">Agregar</button>
+    </div>`;
+  document.getElementById('overlay').classList.add('open');
+}
+function saveAddSection(){
+  const label=document.getElementById('as-label').value.trim()||'Nueva sección';
+  orgStructure.push({label,areas:[]});
+  closeOverlay();renderView('org');
 }
 
 // ── EQUIPO ────────────────────────────────────────────────────────────
